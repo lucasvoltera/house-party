@@ -11,6 +11,31 @@ class RoomView(generics.ListAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
+class GetRoom(APIView):
+    serializer_class = RoomSerializer
+    ## lookup_url_kwarg is the name of the parameter in the url
+    lookup_url_kwarg = 'code'
+
+    def get(self, request, format=None):
+        ## request.GET.get() gets the value of the parameter in the url
+        code = request.GET.get(self.lookup_url_kwarg)
+
+        ## if the code is not None, then we filter the room by the code
+        if code != None:
+            ## filter returns a list of objects
+            room = Room.objects.filter(code=code)
+            ## if the room exists, then we return the room
+            if len(room) > 0:
+                ## data is a dictionary of the room
+                data = RoomSerializer(room[0]).data
+                ## is_host is a boolean that is true if the session key is the same as the host 
+                data['is_host'] = self.request.session.session_key == room[0].host
+
+                return Response(data, status=status.HTTP_200_OK)
+
+            return Response({'Room Not Found': 'Invalid Room Code'}, status=status.HTTP_404_NOT_FOUND)
+
+
 class CreateRoomView(APIView):
     serializer_class = CreateRoomSerializer
 
